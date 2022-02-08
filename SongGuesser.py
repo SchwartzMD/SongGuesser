@@ -4,9 +4,13 @@ import random
 answers = [("Who Let the Dogs Out", "Who Let the Dogs Out"),
            ("Ain't Nothin' but a Heartache", "I Want it That Way"),
            ("We've been spending most our lives", "Gangsta's Paradise"),
-            ("One and One and One is three", "Come Together")]
+            ("One and One and One is three", "Come Together"),
+           ("Lyric2", "Song2"),
+           ("Lyric3", "Song3")]
+for x in range(100):
+    answers.append(("Lyric"+str(x), "Song"+str(x)))
 random.shuffle(answers)
-correct = random.randint(0,len(answers)-1)
+correct = random.randint(0,3)
 
 # create root window
 class myWindow:
