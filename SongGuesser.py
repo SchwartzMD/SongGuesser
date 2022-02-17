@@ -8,123 +8,116 @@ import json
 from tkmacosx import Button
 
 
-class SongGuesser(Tk):
+class SongGuesser:
+    def __init__(self, master):
+        self.score = 0
+        self.attempts = 0
+        self.guess = False
+        self.menuPage = Frame(root)
+        self.menuPage.pack()
+        self.label = Label(self.menuPage, text="Song Guesser")
+        self.label.pack()
+        self.options = Frame(self.menuPage)
+        self.options.pack()
+        genres = ('Hip Hop', 'Country', 'Pop', 'R&B', 'Rock', 'Any')
+        genres_var = StringVar(value=genres)
+        self.genreBox = Listbox(self.options, height=6, listvariable=genres_var, exportselection=0)
+        decades = ('60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s', 'Any')
+        decades_var = StringVar(value=decades)
+        self.decadeBox = Listbox(self.options, height=8, listvariable=decades_var, exportselection=0)
+        self.genre_label = Label(self.options, text="Select a Genre:")
+        self.decade_label = Label(self.options, text="Select a Decade:")
+        self.genre_label.grid(column=0, row=0)
+        self.decade_label.grid(column=1, row=0)
+        self.genreBox.grid(column=0, row=1)
+        self.decadeBox.grid(column=1, row=1)
+        self.button = Button(self.menuPage, text="Play!",
+                             command=lambda: [self.guessPager()]
+                             )
+        # guessPage(parent, controller).pickSongs(), controller.show_frame(guessPage)
+        self.button.pack()
 
-    def __init__(self, *args, **kwargs):
-        Tk.__init__(self, *args, **kwargs)
-        container = Frame(self)
-
-        container.pack(side="top", fill="both", expand=True)
-
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
-
-        self.frames = {}
-
-        for F in (menuPage, guessPage):
-            frame = F(container, self)
-
-            self.frames[F] = frame
-
-            frame.grid(row=0, column=0, sticky="nsew")
-
-        self.show_frame(menuPage)
-
-    def show_frame(self, cont):
-        frame = self.frames[cont]
-        frame.tkraise()
-
-
-def getLyric():
-    file = open('lyrics.json')
-    lyrics = json.load(file)["message"]["body"]["lyrics"]["lyrics_body"]
-    lyrics = lyrics[:-75]
-    line = ""
-    line_pick = random.randint(0, len(lyrics) - 12)
-
-    while lyrics[line_pick] != "\n":
-        line_pick -= 1
-    line_pick += 1
-    while lyrics[line_pick] != "\n":
-        line = line + lyrics[line_pick]
-        line_pick += 1
-    return line
-
-
-class guessPage(Frame):
-    def __init__(self, parent, controller):
-        Frame.__init__(self, parent)
-        button = Button(self, text="Back to Menu",
-                           command=lambda: [controller.show_frame(menuPage)]
-                        )
-        button.pack()
-        self.answers = ["no", "no", "no", "no"]
-        self.question = Label(self, text=getLyric())
+    def guessPager(self):
+        key = self.pickSongs()
+        self.guess = False
+        self.answers = key[0]
+        self.correct = key[1]
+        self.menuPage.destroy()
+        self.guessPage = Frame(root)
+        self.guessPage.pack()
+        self.nav = Frame(self.guessPage)
+        self.nav.pack()
+        self.question = Frame(self.guessPage)
         self.question.pack()
-        self.answer1 = Button(self, bd=0,
+        back_button = Button(self.nav, text="Back to Menu",
+                             command=lambda: [self.menuPager()]
+                             )
+        back_button.grid(column=0, row=0)
+        self.prompt = Label(self.question, text=self.getLyric())
+        self.prompt.pack()
+        self.answer1 = Button(self.question, bd=0,
                               text=self.answers[0][0] + " - " + self.answers[0][1].split(" feat.")[0],
-                              command=self.check1)
+                              command=lambda: [self.check1(),
+                                               self.next_prompt()])
         self.answer1.pack()
-        self.answer2 = Button(self, bd=0,
+        self.answer2 = Button(self.question, bd=0,
                               text=self.answers[1][0] + " - " + self.answers[1][1].split(" feat.")[0],
-                              command=self.check2)
+                              command=lambda: [self.check2(),
+                                               self.next_prompt()])
         self.answer2.pack()
-        self.answer3 = Button(self, bd=0,
+        self.answer3 = Button(self.question, bd=0,
                               text=self.answers[2][0] + " - " + self.answers[2][1].split(" feat.")[0],
-                              command=self.check3)
+                              command=lambda: [self.check3(),
+                                               self.next_prompt()])
         self.answer3.pack()
-        self.answer4 = Button(self, bd=0,
+        self.answer4 = Button(self.question, bd=0,
                               text=self.answers[3][0] + " - " + self.answers[3][1].split(" feat.")[0],
-                              command=self.check4)
+                              command=lambda: [self.check4(),
+                                               self.next_prompt()])
         self.answer4.pack()
+        self.score_display = Label(self.guessPage,
+                                   text="Score: " + str(self.score) + "/" + str(self.attempts))
+        self.score_display.pack()
 
-    def updateAnswers(self):
-        self.answer1.config(text=self.answers[0][0] + " - " + self.answers[0][1].split(" feat.")[0],
-                            bg="#F0F0F0"),
-        self.answer2.config(text=self.answers[1][0] + " - " + self.answers[1][1].split(" feat.")[0],
-                            bg="#F0F0F0"),
-        self.answer3.config(text=self.answers[2][0] + " - " + self.answers[2][1].split(" feat.")[0],
-                            bg="#F0F0F0"),
-        self.answer4.config(text=self.answers[3][0] + " - " + self.answers[3][1].split(" feat.")[0],
-                            bg="#F0F0F0")
+    def next_prompt(self):
+        next_button = Button(self.nav, text="Next",
+                             command=lambda: [self.guessPage.destroy(), self.guessPager()])
+        next_button.grid(column=1, row=0)
 
-    def check1(self, event=None):
-        if self.correct == 0:
-            self.answer1.config(bg="green")
-        else:
-            self.answer1.config(bg="red")
-
-    def check2(self, event=None):
-        if self.correct == 1:
-            self.answer2.config(bg="green")
-        else:
-            self.answer2.config(bg="red")
-
-    def check3(self, event=None):
-        if self.correct == 2:
-            self.answer3.config(bg="green")
-        else:
-            self.answer3.config(bg="red")
-
-    def check4(self, event=None):
-        if self.correct == 3:
-            self.answer4.config(bg="green")
-        else:
-            self.answer4.config(bg="red")
-
-    def pickCorrect(self):
-        self.correct = random.randint(0,3)
-
-    def updateLyric(self, event=None):
-        self.question.config(text=getLyric())
-
-
+    def menuPager(self):
+        self.score = 0
+        self.attempts = 0
+        self.guessPage.destroy()
+        self.menuPage = Frame(root)
+        self.menuPage.pack()
+        self.label = Label(self.menuPage, text="Song Guesser")
+        self.label.pack()
+        self.options = Frame(self.menuPage)
+        self.options.pack()
+        genres = ('Hip Hop', 'Country', 'Pop', 'R&B', 'Rock', 'Any')
+        genres_var = StringVar(value=genres)
+        self.genreBox = Listbox(self.options, height=6, listvariable=genres_var, exportselection=0)
+        decades = ('60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s', 'Any')
+        decades_var = StringVar(value=decades)
+        self.decadeBox = Listbox(self.options, height=8, listvariable=decades_var, exportselection=0)
+        self.genre_label = Label(self.options, text="Select a Genre:")
+        self.decade_label = Label(self.options, text="Select a Decade:")
+        self.genre_label.grid(column=0, row=0)
+        self.decade_label.grid(column=1, row=0)
+        self.genreBox.grid(column=0, row=1)
+        self.decadeBox.grid(column=1, row=1)
+        self.button = Button(self.menuPage, text="Play!",
+                             command=lambda: [self.guessPager()]
+                             )
+        # guessPage(parent, controller).pickSongs(), controller.show_frame(guessPage)
+        self.button.pack()
 
     def pickSongs(self):
         file = open('songs.json')
         tracklist = []
         for x in json.load(file)["message"]["body"]["track_list"]:
-            tracklist.append((x["track"]["track_name"], x["track"]["artist_name"]))
+            if x["track"]["has_lyrics"] == 1:
+                tracklist.append((x["track"]["track_name"], x["track"]["artist_name"]))
 
         rands = []
         for x in range(0, len(tracklist)):
@@ -138,12 +131,6 @@ class guessPage(Frame):
             track = tracklist[x][0]
             artist = tracklist[x][1]
             answers.append((track, artist))
-
-        file = open('songs.json')
-        tracklist = []
-        for x in json.load(file)["message"]["body"]["track_list"]:
-            if x["track"]["has_lyrics"] == 1:
-                tracklist.append((x["track"]["track_name"], x["track"]["artist_name"]))
 
         track = answers[correct][0]
         artist = answers[correct][1]
@@ -159,51 +146,73 @@ class guessPage(Frame):
         with open('lyrics.json', 'w') as outfile:
             json.dump(response.json(), outfile)
         return answers, correct
-        self.answers = answers
-        self.correct = correct
-        print(self.answers)
 
+    def getLyric(self):
+        file = open('lyrics.json')
+        lyrics = json.load(file)["message"]["body"]["lyrics"]["lyrics_body"]
+        lyrics = lyrics[:-74]
+        line = ""
+        line_pick = random.randint(0, len(lyrics) - 2)
 
+        while lyrics[line_pick] != "\n":
+            line_pick -= 1
+        line_pick += 1
+        while lyrics[line_pick] != "\n":
+            line = line + lyrics[line_pick]
+            line_pick += 1
+        return line
 
-class menuPage(Frame):
-    def __init__(self, parent, controller):
-        Frame.__init__(self, parent)
-        self.label = Label(self, text="Song Guesser")
-        self.label.pack()
-        self.options = Frame(self)
-        self.options.pack()
-        genres = ('Hip Hop', 'Country', 'Pop', 'R&B', 'Rock', 'Any')
-        genres_var = StringVar(value=genres)
-        self.genreBox = Listbox(self.options, height=6, listvariable=genres_var, exportselection=0)
-        decades = ('60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s', 'Any')
-        decades_var = StringVar(value=decades)
-        self.decadeBox = Listbox(self.options, height=8, listvariable=decades_var, exportselection=0)
-        self.genre_label = Label(self.options, text = "Select a Genre:")
-        self.decade_label = Label(self.options, text="Select a Decade:")
-        self.genre_label.grid(column = 0, row = 0)
-        self.decade_label.grid(column=1, row=0)
-        self.genreBox.grid(column=0, row=1)
-        self.decadeBox.grid(column=1, row=1)
-        self.button = Button(self, text="Play!",
-                        command=lambda: [self.guessPager()]
-                        )
-        #guessPage(parent, controller).pickSongs(), controller.show_frame(guessPage)
-        self.button.pack()
+    def check1(self, event=None):
+        if not self.guess:
+            if self.correct == 0:
+                self.answer1.config(bg="green")
+                self.score += 1
+                self.attempts += 1
+                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+            else:
+                self.answer1.config(bg="red")
+                self.attempts += 1
+                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+        self.guess = True
 
-    def guessPager(self):
-        self.label.destroy()
-        self.options.destroy()
-        self.genreBox.destroy()
-        self.decadeBox.destroy()
-        self.genre_label.destroy()
-        self.decade_label.destroy()
-        self.button.destroy()
+    def check2(self, event=None):
+        if not self.guess:
+            if self.correct == 1:
+                self.answer2.config(bg="green")
+                self.score += 1
+                self.attempts += 1
+                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+            else:
+                self.answer2.config(bg="red")
+                self.attempts += 1
+                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+        self.guess = True
 
+    def check3(self, event=None):
+        if not self.guess:
+            if self.correct == 2:
+                self.answer3.config(bg="green")
+                self.score += 1
+                self.attempts += 1
+                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+            else:
+                self.answer3.config(bg="red")
+                self.attempts += 1
+                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+        self.guess = True
 
-    def loadLyric(self):
-        guessPage.updateLyric(self)
-
-
+    def check4(self, event=None):
+        if not self.guess:
+            if self.correct == 3:
+                self.answer4.config(bg="green")
+                self.score += 1
+                self.attempts += 1
+                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+            else:
+                self.answer4.config(bg="red")
+                self.attempts += 1
+                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+        self.guess = True
 
 
 def getCorrect():
@@ -215,45 +224,14 @@ def getCorrect():
     print(tracklist)
 
 
-
-"""random.shuffle(answers)
-correct = random.randint(0, 3)"""
-
-"""center_screen()
-root.geometry('400x400')
-# frame inside root window
-top = Frame(root)
-bottom = Frame(root, width=300)
-top.pack()"""
-# geometry method
-
-
-# button inside frame which is
-# inside root
-"""question = Label(top, text="Ain't nothing but a heartache")
-question.pack()"""
-
-"""answer1 = Button(root, text='Who Let the Dogs Out', wraplength=150).place(x=25, y = 200)
-answer2 = Button(root, text='I Want it That Way', wraplength=150).place(x=225, y = 200)
-answer3 = Button(root, text="Gangsta's Paradise", wraplength=150).place(x=25, y = 300)
-answer4 = Button(root, text='Jump', wraplength=150).place(x=225, y = 300)"""
-
-"""answer1 = Button(bottom, text='Who Let the Dogs Out', wraplength=150)
-answer2 = Button(bottom, text='I Want it That Way', wraplength=150, action=correct())
-answer3 = Button(bottom, text="Gangsta's Paradise", wraplength=150)
-answer4 = Button(bottom, text='Jump', wraplength=150)
-
-
-
-bottom.pack()
-answer1.grid(row=0, column=0)
-answer2.grid(row=0, column=1)
-answer3.grid(row=1, column=0)
-answer4.grid(row=1, column=1)"""
-
 # Radio Button??
 # COMBOBOX
 # MESSAGE WIDGET for warning
-# Tkinter event loop
 
-SongGuesser().mainloop()
+# Tkinter event loop
+if __name__ == "__main__":
+    root = Tk()
+    root.title('Song Guesser')
+    root.eval('tk::PlaceWindow . center')
+    mainWindow = SongGuesser(root)
+    root.mainloop()
