@@ -6,6 +6,10 @@ import random
 import requests as r
 import json
 from tkmacosx import Button
+import os
+from PIL import Image
+import time
+import randomize_client
 
 
 class SongGuesser:
@@ -124,7 +128,8 @@ class SongGuesser:
             rands.append(x)
         random.shuffle(rands)
         rands = rands[:4]
-        correct = random.randint(0, 3)
+        choices = [0,1,2,3]
+        correct = randomize_client.randomObjReturn(choices)
 
         answers = []
         for x in rands:
@@ -160,6 +165,7 @@ class SongGuesser:
         while lyrics[line_pick] != "\n":
             line = line + lyrics[line_pick]
             line_pick += 1
+        print(lyrics)
         return line
 
     def check1(self, event=None):
@@ -173,6 +179,12 @@ class SongGuesser:
                 self.answer1.config(bg="red")
                 self.attempts += 1
                 self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+                self.guess = True
+                self.check2()
+                self.check3()
+                self.check4()
+        if self.correct == 0:
+            self.answer1.config(bg="green")
         self.guess = True
 
     def check2(self, event=None):
@@ -182,11 +194,17 @@ class SongGuesser:
                 self.score += 1
                 self.attempts += 1
                 self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+                self.guess = True
             else:
                 self.answer2.config(bg="red")
                 self.attempts += 1
                 self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-        self.guess = True
+                self.guess = True
+                self.check1()
+                self.check3()
+                self.check4()
+        if self.correct == 1:
+            self.answer2.config(bg="green")
 
     def check3(self, event=None):
         if not self.guess:
@@ -195,11 +213,17 @@ class SongGuesser:
                 self.score += 1
                 self.attempts += 1
                 self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+                self.guess = True
             else:
                 self.answer3.config(bg="red")
                 self.attempts += 1
                 self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-        self.guess = True
+                self.guess = True
+                self.check1()
+                self.check2()
+                self.check4()
+        if self.correct == 2:
+            self.answer3.config(bg="green")
 
     def check4(self, event=None):
         if not self.guess:
@@ -208,11 +232,17 @@ class SongGuesser:
                 self.score += 1
                 self.attempts += 1
                 self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+                self.guess = True
             else:
                 self.answer4.config(bg="red")
                 self.attempts += 1
                 self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-        self.guess = True
+                self.guess = True
+                self.check1()
+                self.check2()
+                self.check3()
+        if self.correct == 3:
+            self.answer4.config(bg="green")
 
 
 def getCorrect():
