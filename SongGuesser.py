@@ -10,6 +10,7 @@ import os
 from PIL import Image
 import time
 import randomize_client
+import billboard
 
 
 class SongGuesser:
@@ -23,10 +24,10 @@ class SongGuesser:
         self.label.pack()
         self.options = Frame(self.menuPage)
         self.options.pack()
-        genres = ('Hip Hop', 'Country', 'Pop', 'R&B', 'Rock', 'Any')
+        genres = ('Any','Hip Hop', 'Country', 'Pop', 'R&B', 'Rock')
         genres_var = StringVar(value=genres)
         self.genreBox = Listbox(self.options, height=6, listvariable=genres_var, exportselection=0)
-        decades = ('60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s', 'Any')
+        decades = ('Any','60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s')
         decades_var = StringVar(value=decades)
         self.decadeBox = Listbox(self.options, height=8, listvariable=decades_var, exportselection=0)
         self.genre_label = Label(self.options, text="Select a Genre:")
@@ -42,6 +43,7 @@ class SongGuesser:
         self.button.pack()
 
     def guessPager(self):
+        print(self.getDecade(),self.getGenre())
         key = self.pickSongs()
         self.guess = False
         self.answers = key[0]
@@ -98,10 +100,10 @@ class SongGuesser:
         self.label.pack()
         self.options = Frame(self.menuPage)
         self.options.pack()
-        genres = ('Hip Hop', 'Country', 'Pop', 'R&B', 'Rock', 'Any')
-        genres_var = StringVar(value=genres)
-        self.genreBox = Listbox(self.options, height=6, listvariable=genres_var, exportselection=0)
-        decades = ('60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s', 'Any')
+        genres = ('Any','Hip Hop', 'Country', 'Pop', 'R&B', 'Rock')
+        self.genres_var = StringVar(value=genres)
+        self.genreBox = Listbox(self.options, height=6, listvariable=self.genres_var, exportselection=0)
+        decades = ('Any','60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s')
         decades_var = StringVar(value=decades)
         self.decadeBox = Listbox(self.options, height=8, listvariable=decades_var, exportselection=0)
         self.genre_label = Label(self.options, text="Select a Genre:")
@@ -116,12 +118,32 @@ class SongGuesser:
         # guessPage(parent, controller).pickSongs(), controller.show_frame(guessPage)
         self.button.pack()
 
+    def getGenre(self):
+        return self.genreBox.get(ANCHOR)
+
+    def getDecade(self):
+        return self.decadeBox.get(ANCHOR)
+
+
+    def getSongs(self):
+        month= ["01","02",'03','04','05','06','07','08','09','10','11','12']
+        day = ['01', '02', '03', '04', '05', '06', '07','08','09']
+        for x in range(10,29):
+            day.append(str(x))
+        year = 1994
+        self.date = str(year) + '-' + str(randomize_client.randomObjReturn(month)) + '-' + str(randomize_client.randomObjReturn(day))
+        fetch = True
+        self.chart = billboard.ChartData('hot-100', self.date)
+        return self.chart
+        print(chart)
+        print(chart[0].title, chart[0].artist)
+
     def pickSongs(self):
         file = open('songs.json')
-        tracklist = []
-        for x in json.load(file)["message"]["body"]["track_list"]:
+        tracklist = self.getSongs()
+        """for x in json.load(file)["message"]["body"]["track_list"]:
             if x["track"]["has_lyrics"] == 1:
-                tracklist.append((x["track"]["track_name"], x["track"]["artist_name"]))
+                tracklist.append((x["track"]["track_name"], x["track"]["artist_name"]))"""
 
         rands = []
         for x in range(0, len(tracklist)):
@@ -133,8 +155,8 @@ class SongGuesser:
 
         answers = []
         for x in rands:
-            track = tracklist[x][0]
-            artist = tracklist[x][1]
+            track = tracklist[x].title
+            artist = tracklist[x].artist
             answers.append((track, artist))
 
         track = answers[correct][0]
@@ -148,6 +170,8 @@ class SongGuesser:
                      "q_track=" + api_track + "&q_artist=" + api_artist + api_key
 
         response = r.get(track_call)
+        if response.status_code!=200:
+            print("WHOOPS")
         with open('lyrics.json', 'w') as outfile:
             json.dump(response.json(), outfile)
         return answers, correct
@@ -158,7 +182,6 @@ class SongGuesser:
         lyrics = lyrics[:-74]
         line = ""
         line_pick = random.randint(0, len(lyrics) - 2)
-
         while lyrics[line_pick] != "\n":
             line_pick -= 1
         line_pick += 1
@@ -173,16 +196,14 @@ class SongGuesser:
             if self.correct == 0:
                 self.answer1.config(bg="green")
                 self.score += 1
-                self.attempts += 1
-                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
             else:
                 self.answer1.config(bg="red")
-                self.attempts += 1
-                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
                 self.guess = True
                 self.check2()
                 self.check3()
                 self.check4()
+            self.attempts += 1
+            self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
         if self.correct == 0:
             self.answer1.config(bg="green")
         self.guess = True
@@ -192,17 +213,15 @@ class SongGuesser:
             if self.correct == 1:
                 self.answer2.config(bg="green")
                 self.score += 1
-                self.attempts += 1
-                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
                 self.guess = True
             else:
                 self.answer2.config(bg="red")
-                self.attempts += 1
-                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
                 self.guess = True
                 self.check1()
                 self.check3()
                 self.check4()
+            self.attempts += 1
+            self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
         if self.correct == 1:
             self.answer2.config(bg="green")
 
@@ -211,17 +230,15 @@ class SongGuesser:
             if self.correct == 2:
                 self.answer3.config(bg="green")
                 self.score += 1
-                self.attempts += 1
-                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
                 self.guess = True
             else:
                 self.answer3.config(bg="red")
-                self.attempts += 1
-                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
                 self.guess = True
                 self.check1()
                 self.check2()
                 self.check4()
+            self.attempts += 1
+            self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
         if self.correct == 2:
             self.answer3.config(bg="green")
 
@@ -230,17 +247,15 @@ class SongGuesser:
             if self.correct == 3:
                 self.answer4.config(bg="green")
                 self.score += 1
-                self.attempts += 1
-                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
                 self.guess = True
             else:
                 self.answer4.config(bg="red")
-                self.attempts += 1
-                self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
                 self.guess = True
                 self.check1()
                 self.check2()
                 self.check3()
+            self.attempts += 1
+            self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
         if self.correct == 3:
             self.answer4.config(bg="green")
 
