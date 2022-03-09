@@ -1,4 +1,4 @@
-# NEW STUFF
+# Since I Don't Have You Guns N' Roses
 
 from tkinter import *
 from tkinter import ttk
@@ -6,15 +6,15 @@ import random
 import requests as r
 import json
 from tkmacosx import Button
-import os
-from PIL import Image
-import time
-import randomize_client
+from microservice import randomize_client
 import billboard
-
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+from PIL import Image, ImageTk
 
 class SongGuesser:
     def __init__(self, master):
+        self.year = None
         self.score = 0
         self.attempts = 0
         self.guess = False
@@ -24,26 +24,59 @@ class SongGuesser:
         self.label.pack()
         self.options = Frame(self.menuPage)
         self.options.pack()
-        genres = ('Any','Hip Hop', 'Country', 'Pop', 'R&B', 'Rock')
+        self.years = list(range(1959,2022))
+        self.years.append("Random")
+        self.years.reverse()
+        """genres = ('Any','Hip Hop', 'Country', 'Pop', 'R&B', 'Rock')
         genres_var = StringVar(value=genres)
-        self.genreBox = Listbox(self.options, height=6, listvariable=genres_var, exportselection=0)
+        self.genreBox = Listbox(self.options, height=6, listvariable=genres_var, exportselection=0)"""
         decades = ('Any','60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s')
-        decades_var = StringVar(value=decades)
-        self.decadeBox = Listbox(self.options, height=8, listvariable=decades_var, exportselection=0)
-        self.genre_label = Label(self.options, text="Select a Genre:")
-        self.decade_label = Label(self.options, text="Select a Decade:")
-        self.genre_label.grid(column=0, row=0)
+        decades_var = StringVar(value=self.years)
+        self.decadeBox = ttk.Combobox(self.options, values=self.years)
+        self.decadeBox.current(0)
+        """self.genre_label = Label(self.options, text="Select a Genre:")"""
+        self.decade_label = Label(self.options, text="Select a year:")
+        """self.genre_label.grid(column=0, row=0)"""
         self.decade_label.grid(column=1, row=0)
-        self.genreBox.grid(column=0, row=1)
+        """self.genreBox.grid(column=0, row=1)"""
         self.decadeBox.grid(column=1, row=1)
         self.button = Button(self.menuPage, text="Play!",
-                             command=lambda: [self.guessPager()]
+                             command=lambda: [self.getDecade(), self.guessPager()]
+                             )
+        # guessPage(parent, controller).pickSongs(), controller.show_frame(guessPage)
+        self.button.pack()
+
+    def menuPager(self):
+        self.score = 0
+        self.attempts = 0
+        self.guessPage.destroy()
+        self.menuPage = Frame(root)
+        self.menuPage.pack()
+        self.label = Label(self.menuPage, text="Song Guesser")
+        self.label.pack()
+        self.options = Frame(self.menuPage)
+        self.options.pack()
+        """genres = ('Any','Hip Hop', 'Country', 'Pop', 'R&B', 'Rock')
+        self.genres_var = StringVar(value=genres)
+        self.genreBox = Listbox(self.options, height=6, listvariable=self.genres_var, exportselection=0)"""
+        years = list(range(1958,2022))
+        years.append("Random")
+        years.reverse()
+        self.decadeBox = ttk.Combobox(self.options, values = years)
+        self.decadeBox.current(0)
+        """self.genre_label = Label(self.options, text="Select a Genre:")"""
+        self.decade_label = Label(self.options, text="Select a Year:")
+        """self.genre_label.grid(column=0, row=0)"""
+        self.decade_label.grid(column=1, row=0)
+        """self.genreBox.grid(column=0, row=1)"""
+        self.decadeBox.grid(column=1, row=1)
+        self.button = Button(self.menuPage, text="Play!",
+                             command=lambda: [self.getDecade(), self.guessPager()]
                              )
         # guessPage(parent, controller).pickSongs(), controller.show_frame(guessPage)
         self.button.pack()
 
     def guessPager(self):
-        print(self.getDecade(),self.getGenre())
         key = self.pickSongs()
         self.guess = False
         self.answers = key[0]
@@ -53,6 +86,8 @@ class SongGuesser:
         self.guessPage.pack()
         self.nav = Frame(self.guessPage)
         self.nav.pack()
+        self.spotButt = Frame(self.guessPage)
+        self.spotButt.pack()
         self.question = Frame(self.guessPage)
         self.question.pack()
         back_button = Button(self.nav, text="Back to Menu",
@@ -89,53 +124,33 @@ class SongGuesser:
         next_button = Button(self.nav, text="Next",
                              command=lambda: [self.guessPage.destroy(), self.guessPager()])
         next_button.grid(column=1, row=0)
-
-    def menuPager(self):
-        self.score = 0
-        self.attempts = 0
-        self.guessPage.destroy()
-        self.menuPage = Frame(root)
-        self.menuPage.pack()
-        self.label = Label(self.menuPage, text="Song Guesser")
-        self.label.pack()
-        self.options = Frame(self.menuPage)
-        self.options.pack()
-        genres = ('Any','Hip Hop', 'Country', 'Pop', 'R&B', 'Rock')
-        self.genres_var = StringVar(value=genres)
-        self.genreBox = Listbox(self.options, height=6, listvariable=self.genres_var, exportselection=0)
-        decades = ('Any','60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s')
-        decades_var = StringVar(value=decades)
-        self.decadeBox = Listbox(self.options, height=8, listvariable=decades_var, exportselection=0)
-        self.genre_label = Label(self.options, text="Select a Genre:")
-        self.decade_label = Label(self.options, text="Select a Decade:")
-        self.genre_label.grid(column=0, row=0)
-        self.decade_label.grid(column=1, row=0)
-        self.genreBox.grid(column=0, row=1)
-        self.decadeBox.grid(column=1, row=1)
-        self.button = Button(self.menuPage, text="Play!",
-                             command=lambda: [self.guessPager()]
-                             )
-        # guessPage(parent, controller).pickSongs(), controller.show_frame(guessPage)
-        self.button.pack()
-
-    def getGenre(self):
-        return self.genreBox.get(ANCHOR)
+        logoimage = Image.open("spotify-logo-png-7057.png")
+        logoimage = logoimage.resize((21,21))
+        logoimage = ImageTk.PhotoImage(logoimage)
+        play_button = Button(self.spotButt, text = 'Play on Spotify', image = logoimage, compound = LEFT,
+                             command=lambda: [self.playSong()])
+        play_button.pack()
 
     def getDecade(self):
-        return self.decadeBox.get(ANCHOR)
-
+        self.year = (self.years[self.decadeBox.current()])
 
     def getSongs(self):
         month= ["01","02",'03','04','05','06','07','08','09','10','11','12']
         day = ['01', '02', '03', '04', '05', '06', '07','08','09']
         for x in range(10,29):
             day.append(str(x))
-        year = 1994
-        self.date = str(year) + '-' + str(randomize_client.randomObjReturn(month)) + '-' + str(randomize_client.randomObjReturn(day))
+        if self.year == "Random":
+            self.date = str(randomize_client.randomObjReturn(self.years)) + '-' + str(
+                randomize_client.randomObjReturn(month)) + '-' + str(
+                randomize_client.randomObjReturn(day))
+        else:
+            self.date = str(self.year) + '-' + str(randomize_client.randomObjReturn(month)) + '-' + str(
+                randomize_client.randomObjReturn(day))
         fetch = True
+        print(self.year)
         self.chart = billboard.ChartData('hot-100', self.date)
+        print(self.chart)
         return self.chart
-        print(chart)
         print(chart[0].title, chart[0].artist)
 
     def pickSongs(self):
@@ -152,26 +167,42 @@ class SongGuesser:
         rands = rands[:4]
         choices = [0,1,2,3]
         correct = randomize_client.randomObjReturn(choices)
-
+        choices.remove(correct)
         answers = []
         for x in rands:
             track = tracklist[x].title
             artist = tracklist[x].artist
             answers.append((track, artist))
-
-        track = answers[correct][0]
-        artist = answers[correct][1]
-        api_track = track.replace(" ", "%20").lower()
-        api_artist = artist.replace(" ", "%20").lower()
-        print(track, artist)
+        self.track = answers[correct][0]
+        self.artist = answers[correct][1]
+        api_track = self.track.replace(" ", "%20").lower()
+        api_artist = self.artist.replace(" ", "%20").lower()
+        print(self.track, self.artist)
         api_key = "&apikey=51abcf5782652100f10c6c2da5f3dae2"
 
         track_call = "http://api.musixmatch.com/ws/1.1/matcher.lyrics.get?" \
                      "q_track=" + api_track + "&q_artist=" + api_artist + api_key
 
         response = r.get(track_call)
-        if response.status_code!=200:
-            print("WHOOPS")
+        print(response.json()["message"]["header"]["status_code"])
+        if response.json()["message"]["header"]["status_code"] != 404:
+            lyrics = response.json()["message"]["body"]["lyrics"]["lyrics_body"]
+
+        while (response.json()["message"]["header"]["status_code"] != 200) or (lyrics == ""):
+            correct = randomize_client.randomObjReturn(choices)
+            choices.remove(correct)
+            self.track = answers[correct][0]
+            self.artist = answers[correct][1]
+            api_track = self.track.replace(" ", "%20").lower()
+            api_artist = self.artist.replace(" ", "%20").lower()
+            print(self.track, self.artist)
+            api_key = "&apikey=51abcf5782652100f10c6c2da5f3dae2"
+
+            track_call = "http://api.musixmatch.com/ws/1.1/matcher.lyrics.get?" \
+                         "q_track=" + api_track + "&q_artist=" + api_artist + api_key
+            response = r.get(track_call)
+            if response.json()["message"]["header"]["status_code"] != 404:
+                lyrics = response.json()["message"]["body"]["lyrics"]["lyrics_body"]
         with open('lyrics.json', 'w') as outfile:
             json.dump(response.json(), outfile)
         return answers, correct
@@ -188,7 +219,6 @@ class SongGuesser:
         while lyrics[line_pick] != "\n":
             line = line + lyrics[line_pick]
             line_pick += 1
-        print(lyrics)
         return line
 
     def check1(self, event=None):
@@ -259,14 +289,14 @@ class SongGuesser:
         if self.correct == 3:
             self.answer4.config(bg="green")
 
-
-def getCorrect():
-    file = open('songs.json')
-    song = json.load(file)["message"]["body"]["lyrics"]["lyrics_body"]
-    tracklist = []
-    for x in json.load(file)["message"]["body"]["track_list"]:
-        tracklist.append((x["track"]["track_name"], x["track"]["artist_name"]))
-    print(tracklist)
+    def playSong(self):
+        scope = 'user-modify-playback-state'
+        spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
+        track = spotify.search(self.track + " " + self.artist, type="track", limit=10)["tracks"]["items"]
+        if not track:
+            track = spotify.search(self.track, type="track", limit=10)["tracks"]["items"]
+        uri = track[0]["uri"]
+        spotify.start_playback(uris=[uri])
 
 
 # Radio Button??
