@@ -133,12 +133,12 @@ class SongGuesser:
         for x in range(10,29):
             day.append(str(x))
         if self.year == "Random":
-            self.date = str(randomize_client.randomObjReturn(self.years)) + '-' + str(
-                randomize_client.randomObjReturn(month)) + '-' + str(
-                randomize_client.randomObjReturn(day))
+            self.date = str(random.choice(self.years)) + '-' + str(
+                random.choice(month)) + '-' + str(
+                random.choice(day))
         else:
-            self.date = str(self.year) + '-' + str(randomize_client.randomObjReturn(month)) + '-' + str(
-                randomize_client.randomObjReturn(day))
+            self.date = str(self.year) + '-' + str(random.choice(month)) + '-' + str(
+                random.choice(day))
         self.chart = billboard.ChartData('hot-100', self.date)
         return self.chart
 
@@ -150,7 +150,7 @@ class SongGuesser:
         random.shuffle(rands)
         rands = rands[:4]
         choices = [0,1,2,3]
-        correct = randomize_client.randomObjReturn(choices)
+        correct = random.choice(choices)
         choices.remove(correct)
         answers = []
         for x in rands:
@@ -171,7 +171,7 @@ class SongGuesser:
             lyrics = response.json()["message"]["body"]["lyrics"]["lyrics_body"]
 
         while (response.json()["message"]["header"]["status_code"] != 200) or (lyrics == ""):
-            correct = randomize_client.randomObjReturn(choices)
+            correct = random.choice(choices)
             choices.remove(correct)
             self.track = answers[correct][0]
             self.artist = answers[correct][1]
