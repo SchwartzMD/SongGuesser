@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter import messagebox
 import random
 import requests as r
 import json
@@ -9,12 +10,12 @@ import billboard
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from PIL import Image, ImageTk
+from datetime import datetime
 
 class SongGuesser:
     def __init__(self, master):
         self.year = None
-        self.score = 0
-        self.attempts = 0
+        self.score, self.attempts = 0,0
         self.guess = False
         self.menuPage = Frame(root)
         self.menuPage.pack()
@@ -22,7 +23,7 @@ class SongGuesser:
         self.label.pack()
         self.options = Frame(self.menuPage)
         self.options.pack()
-        self.years = list(range(1959,2022))
+        self.years = list(range(1959,datetime.now().year+1))
         self.years.append("Random")
         self.years.reverse()
         decades = ('Any','60\'s', '70\'s', '80\'s', '90\'s', '2000\'s', '2010\'s', '2020\'s')
@@ -46,7 +47,7 @@ class SongGuesser:
         self.label.pack()
         self.options = Frame(self.menuPage)
         self.options.pack()
-        years = list(range(1958,2022))
+        years = list(range(1958,datetime.now().year+1))
         years.append("Random")
         years.reverse()
         self.decadeBox = ttk.Combobox(self.options, values = years)
@@ -128,17 +129,31 @@ class SongGuesser:
         self.year = (self.years[self.decadeBox.current()])
 
     def getSongs(self):
-        month= ["01","02",'03','04','05','06','07','08','09','10','11','12']
-        day = ['01', '02', '03', '04', '05', '06', '07','08','09']
-        for x in range(10,29):
-            day.append(str(x))
+        month = []
+        day = []
+        monthRange = 12
+        dayRange = 28
+
+
         if self.year == "Random":
-            self.date = str(random.choice(self.years)) + '-' + str(
-                random.choice(month)) + '-' + str(
-                random.choice(day))
-        else:
-            self.date = str(self.year) + '-' + str(random.choice(month)) + '-' + str(
-                random.choice(day))
+            self.year = random.choice(self.years)
+
+        if self.year == datetime.now().year:
+            monthRange = datetime.now().month
+            dayRange = datetime.now().day
+
+        for x in range(1,monthRange+1):
+            if x < 10:
+                month.append("0" + str(x))
+            else:
+                month.append(str(x))
+        for x in range(1,dayRange+1):
+            if x < 10:
+                day.append("0" + str(x))
+            else:
+                day.append(str(x))
+
+        self.date = str(self.year) + '-' + str(random.choice(month)) + '-' + str(random.choice(day))
         self.chart = billboard.ChartData('hot-100', self.date)
         return self.chart
 
@@ -272,13 +287,15 @@ class SongGuesser:
             self.answer4.config(bg="green")
 
     def playSong(self):
-        scope = 'user-modify-playback-state'
-        spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
+        spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope='user-modify-playback-state'))
         track = spotify.search(self.track + " " + self.artist, type="track", limit=10)["tracks"]["items"]
         if not track:
             track = spotify.search(self.track, type="track", limit=10)["tracks"]["items"]
         uri = track[0]["uri"]
-        spotify.start_playback(uris=[uri])
+        try:
+            spotify.start_playback(uris=[uri])
+        except:
+            messagebox.showerror("Spotify Not Active", "Your Spotify player is not active. Please interact with your Spotify app to enable song playing.")
 
 
 # Tkinter event loop
