@@ -102,19 +102,19 @@ class SongGuesser:
         self.prompt.pack()
         self.answer1 = Button(self.question, bd=0,
                               text=self.answers[0][0] + " - " + self.answers[0][1].split(" feat.")[0],
-                              command=lambda: [self.check1()])
+                              command=lambda: [self._handle_guess(0, self.answer1)])
         self.answer1.pack()
         self.answer2 = Button(self.question, bd=0,
                               text=self.answers[1][0] + " - " + self.answers[1][1].split(" feat.")[0],
-                              command=lambda: [self.check2()])
+                              command=lambda: [self._handle_guess(1, self.answer2)])
         self.answer2.pack()
         self.answer3 = Button(self.question, bd=0,
                               text=self.answers[2][0] + " - " + self.answers[2][1].split(" feat.")[0],
-                              command=lambda: [self.check3()])
+                              command=lambda: [self._handle_guess(2, self.answer3)])
         self.answer3.pack()
         self.answer4 = Button(self.question, bd=0,
                               text=self.answers[3][0] + " - " + self.answers[3][1].split(" feat.")[0],
-                              command=lambda: [self.check4()])
+                              command=lambda: [self._handle_guess(3, self.answer4)])
         self.answer4.pack()
         self.score_display = Label(self.guessPage,
                                    text="Score: " + str(self.score) + "/" + str(self.attempts))
@@ -239,72 +239,28 @@ class SongGuesser:
         self.attempts += 1
         self.answerGuessed = True
 
-    def check1(self, event=None):
-        if not self.answerGuessed:
-            if self.correct == 0:
-                self.answer1.config(bg="green")
-                self.correctGuess()
-                self.next_prompt()
-            else:
-                self.answer1.config(bg="red")
-                self.wrongGuess()
-                if self.remainingScore == 0:
-                    self.correctGuess()
-                    self.next_prompt()
-                    self.answer_buttons = [self.answer1, self.answer2, self.answer3, self.answer4]
-                    self.answer_buttons[self.correct].config(bg="green")
-            self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-
-    def check2(self, event=None):
-        if not self.answerGuessed:
-            if self.correct == 1:
-                self.answer2.config(bg="green")
-                self.correctGuess()
-                self.next_prompt()
-            else:
-                self.answer2.config(bg="red")
-                self.wrongGuess()
-                if self.remainingScore == 0:
-                    self.correctGuess()
-                    self.next_prompt()
-                    self.answer_buttons = [self.answer1, self.answer2, self.answer3, self.answer4]
-                    self.answer_buttons[self.correct].config(bg="green")
+    def _handle_guess(self, button_index, button_widget):
+        if self.answerGuessed:
+            return
         
-        self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-
-    def check3(self, event=None):
-        if not self.answerGuessed:
-            if self.correct == 2:
-                self.answer3.config(bg="green")
-                self.correctGuess()
-                self.next_prompt()
-            else:
-                self.answer3.config(bg="red")
-                self.wrongGuess()
-                if self.remainingScore == 0:
-                    self.correctGuess()
-                    self.next_prompt()
-                    self.answer_buttons = [self.answer1, self.answer2, self.answer3, self.answer4]
-                    self.answer_buttons[self.correct].config(bg="green")
+        self.answer_buttons = [self.answer1, self.answer2, self.answer3, self.answer4]
         
-        self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-
-    def check4(self, event=None):
-        if not self.answerGuessed:
-            if self.correct == 3:
-                self.answer4.config(bg="green")
+        is_correct = self.correct == button_index
+        button_color = "green" if is_correct else "red"
+        button_widget.config(bg=button_color)
+        
+        if is_correct:
+            self.correctGuess()
+            self.next_prompt()
+        else:
+            self.wrongGuess()
+            if self.remainingScore == 0:
                 self.correctGuess()
                 self.next_prompt()
-            else:
-                self.answer4.config(bg="red")
-                self.wrongGuess()
-                if self.remainingScore == 0:
-                    self.correctGuess()
-                    self.next_prompt()
-                    self.answer_buttons = [self.answer1, self.answer2, self.answer3, self.answer4]
-                    self.answer_buttons[self.correct].config(bg="green")
-    
-        self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
+                self.answer_buttons[self.correct].config(bg="green")
+                
+        self.score_display.config(text=f"Score: {self.score}/{self.attempts}")
+
 
     def playSong(self):
         spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope='user-modify-playback-state'))
