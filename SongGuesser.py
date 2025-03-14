@@ -5,7 +5,6 @@ import random
 import requests as r
 import json
 from tkmacosx import Button
-from microservice import randomize_client
 import billboard
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -14,13 +13,24 @@ from datetime import datetime
 
 class SongGuesser:
     def __init__(self, master):
+        self.answerGuessed = False
         self.year = None
         self.score, self.attempts = 0,0
-        self.guess = False
+        self.remainingScore = 1
         self.menuPage = Frame(root)
         self.menuPage.pack()
-        self.label = Label(self.menuPage, text="Song Guesser")
-        self.label.pack()
+        self.answerLabel = Label(self.menuPage, text="I want to guess the:")
+        self.answerLabel.pack()
+        self.answerBox = ttk.Combobox(self.menuPage, values=["Song", "Lyric", "Band"])
+        self.answerBox.current(0)
+        self.answerBox.pack()
+        self.gameSelection = Frame(self.menuPage)
+        self.gameSelection.pack()
+        self.questionLabel = Label(self.gameSelection, text="Based on the:")
+        self.questionLabel.pack()
+        self.questionBox = ttk.Combobox(self.menuPage, values=["Song", "Lyric", "Band"])
+        self.questionBox.current(1)
+        self.questionBox.pack()
         self.options = Frame(self.menuPage)
         self.options.pack()
         self.years = list(range(1959,datetime.now().year+1))
@@ -34,7 +44,7 @@ class SongGuesser:
         self.decade_label.grid(column=1, row=0)
         self.decadeBox.grid(column=1, row=1)
         self.new_game = Button(self.menuPage, text="Play!",
-                               command=lambda: [self.getDecade(), self.guessPager()]
+                               command=lambda: [self.getDecade(), self.getQuestionAnswer(), self.guessPager()]
                                )
         # guessPage(parent, controller).pickSongs(), controller.show_frame(guessPage)
         self.new_game.pack()
@@ -43,8 +53,8 @@ class SongGuesser:
         self.guessPage.destroy()
         self.menuPage = Frame(root)
         self.menuPage.pack()
-        self.label = Label(self.menuPage, text="Song Guesser")
-        self.label.pack()
+        # self.label = Label(self.menuPage, text="Song Guesser")
+        # self.label.pack()
         self.options = Frame(self.menuPage)
         self.options.pack()
         years = list(range(1958,datetime.now().year+1))
@@ -57,7 +67,7 @@ class SongGuesser:
         self.decadeBox.grid(column=1, row=1)
         self.buttons = Frame(root)
         self.new_game = Button(self.menuPage, text="New Game",
-                               command=lambda: [self.getDecade(), self.resetScore(), self.guessPager()]
+                               command=lambda: [self.getDecade(), self.resetScore(), self.getQuestionAnswer(), self.guessPager()]
                                )
         self.new_game.pack()
         self.resume = Button(self.menuPage, text="Resume",
@@ -72,9 +82,9 @@ class SongGuesser:
 
     def guessPager(self):
         key = self.pickSongs()
-        self.guess = False
         self.answers = key[0]
         self.correct = key[1]
+        self.answerGuessed = False
         self.menuPage.destroy()
         self.guessPage = Frame(root)
         self.guessPage.pack()
@@ -92,23 +102,19 @@ class SongGuesser:
         self.prompt.pack()
         self.answer1 = Button(self.question, bd=0,
                               text=self.answers[0][0] + " - " + self.answers[0][1].split(" feat.")[0],
-                              command=lambda: [self.check1(),
-                                               self.next_prompt()])
+                              command=lambda: [self.check1()])
         self.answer1.pack()
         self.answer2 = Button(self.question, bd=0,
                               text=self.answers[1][0] + " - " + self.answers[1][1].split(" feat.")[0],
-                              command=lambda: [self.check2(),
-                                               self.next_prompt()])
+                              command=lambda: [self.check2()])
         self.answer2.pack()
         self.answer3 = Button(self.question, bd=0,
                               text=self.answers[2][0] + " - " + self.answers[2][1].split(" feat.")[0],
-                              command=lambda: [self.check3(),
-                                               self.next_prompt()])
+                              command=lambda: [self.check3()])
         self.answer3.pack()
         self.answer4 = Button(self.question, bd=0,
                               text=self.answers[3][0] + " - " + self.answers[3][1].split(" feat.")[0],
-                              command=lambda: [self.check4(),
-                                               self.next_prompt()])
+                              command=lambda: [self.check4()])
         self.answer4.pack()
         self.score_display = Label(self.guessPage,
                                    text="Score: " + str(self.score) + "/" + str(self.attempts))
@@ -124,6 +130,10 @@ class SongGuesser:
         play_button = Button(self.spotButt, text = 'Play on Spotify', image = logoimage, compound = LEFT,
                              command=lambda: [self.playSong()])
         play_button.pack()
+
+    def getQuestionAnswer(self):
+        self.questionChoice = self.questionBox.current()
+        self.answerChoice = self.answerBox.current()
 
     def getDecade(self):
         self.year = (self.years[self.decadeBox.current()])
@@ -217,74 +227,65 @@ class SongGuesser:
             line = line + lyrics[line_pick]
             line_pick += 1
         return line
+    
+    def wrongGuess(self):
+        lowerScore = {1:0.5, 0.50:0.25, 0.25:0}
+        self.remainingScore = lowerScore[self.remainingScore]
+
+    def correctGuess(self):
+        self.score += self.remainingScore
+        self.remainingScore = 1
+        self.attempts += 1
+        self.answerGuessed = True
 
     def check1(self, event=None):
-        if not self.guess:
+        if not self.answerGuessed:
             if self.correct == 0:
                 self.answer1.config(bg="green")
-                self.score += 1
+                self.correctGuess()
+                self.next_prompt()
             else:
                 self.answer1.config(bg="red")
-                self.guess = True
-                self.check2()
-                self.check3()
-                self.check4()
-            self.attempts += 1
+                self.wrongGuess()
             self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-        if self.correct == 0:
-            self.answer1.config(bg="green")
-        self.guess = True
+            print(self.remainingScore)
+            print(self.score)
 
     def check2(self, event=None):
-        if not self.guess:
+        if not self.answerGuessed:
             if self.correct == 1:
                 self.answer2.config(bg="green")
-                self.score += 1
-                self.guess = True
+                self.correctGuess()
+                self.next_prompt()
             else:
                 self.answer2.config(bg="red")
-                self.guess = True
-                self.check1()
-                self.check3()
-                self.check4()
-            self.attempts += 1
-            self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-        if self.correct == 1:
-            self.answer2.config(bg="green")
+                self.wrongGuess()
+        
+        self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
 
     def check3(self, event=None):
-        if not self.guess:
+        if not self.answerGuessed:
             if self.correct == 2:
                 self.answer3.config(bg="green")
-                self.score += 1
-                self.guess = True
+                self.correctGuess()
+                self.next_prompt()
             else:
                 self.answer3.config(bg="red")
-                self.guess = True
-                self.check1()
-                self.check2()
-                self.check4()
-            self.attempts += 1
-            self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-        if self.correct == 2:
-            self.answer3.config(bg="green")
+                self.wrongGuess()
+        
+        self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
 
     def check4(self, event=None):
-        if not self.guess:
+        if not self.answerGuessed:
             if self.correct == 3:
                 self.answer4.config(bg="green")
-                self.score += 1
-                self.guess = True
+                self.correctGuess()
+                self.next_prompt()
             else:
                 self.answer4.config(bg="red")
-                self.guess = True
-                self.check1()
-                self.check2()
-                self.check3()
-            self.attempts += 1
-            self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-        if self.correct == 3:
-            self.answer4.config(bg="green")
+                self.wrongGuess()
+    
+        self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
 
     def playSong(self):
         spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope='user-modify-playback-state'))
