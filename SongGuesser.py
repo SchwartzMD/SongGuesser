@@ -229,9 +229,10 @@ class SongGuesser:
         return line
     
     def wrongGuess(self):
-        lowerScore = {1:0.5, 0.50:0.25, 0.25:0}
-        self.remainingScore = lowerScore[self.remainingScore]
-
+        if not self.answerGuessed:
+            lowerScore = {1:0.5, 0.50:0.25, 0.25:0}
+            self.remainingScore = lowerScore[self.remainingScore]
+            
     def correctGuess(self):
         self.score += self.remainingScore
         self.remainingScore = 1
@@ -247,9 +248,12 @@ class SongGuesser:
             else:
                 self.answer1.config(bg="red")
                 self.wrongGuess()
+                if self.remainingScore == 0:
+                    self.correctGuess()
+                    self.next_prompt()
+                    self.answer_buttons = [self.answer1, self.answer2, self.answer3, self.answer4]
+                    self.answer_buttons[self.correct].config(bg="green")
             self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
-            print(self.remainingScore)
-            print(self.score)
 
     def check2(self, event=None):
         if not self.answerGuessed:
@@ -260,6 +264,11 @@ class SongGuesser:
             else:
                 self.answer2.config(bg="red")
                 self.wrongGuess()
+                if self.remainingScore == 0:
+                    self.correctGuess()
+                    self.next_prompt()
+                    self.answer_buttons = [self.answer1, self.answer2, self.answer3, self.answer4]
+                    self.answer_buttons[self.correct].config(bg="green")
         
         self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
 
@@ -272,6 +281,11 @@ class SongGuesser:
             else:
                 self.answer3.config(bg="red")
                 self.wrongGuess()
+                if self.remainingScore == 0:
+                    self.correctGuess()
+                    self.next_prompt()
+                    self.answer_buttons = [self.answer1, self.answer2, self.answer3, self.answer4]
+                    self.answer_buttons[self.correct].config(bg="green")
         
         self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
 
@@ -284,6 +298,11 @@ class SongGuesser:
             else:
                 self.answer4.config(bg="red")
                 self.wrongGuess()
+                if self.remainingScore == 0:
+                    self.correctGuess()
+                    self.next_prompt()
+                    self.answer_buttons = [self.answer1, self.answer2, self.answer3, self.answer4]
+                    self.answer_buttons[self.correct].config(bg="green")
     
         self.score_display.config(text="Score: " + str(self.score) + "/" + str(self.attempts))
 
