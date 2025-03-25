@@ -95,25 +95,31 @@ class SongGuesser:
         self.question = Frame(self.guessPage)
         self.question.pack()
         back_button = Button(self.nav, text="Back to Menu",
-                             command=lambda: [self.menuPager()]
-                             )
+                             command=lambda: [self.menuPager()])
         back_button.grid(column=0, row=0)
         self.prompt = Label(self.question, text=self.getLyric())
         self.prompt.pack()
+        
+        # Determine button text based on answer type
+        if self.answerChoice == 2:  # Band mode (index 2 corresponds to "Band" in answerBox values)
+            button_text = lambda ans: ans[1].split(" feat.")[0]  # Show only artist/band name
+        else:  # Song mode or Lyric mode
+            button_text = lambda ans: ans[0] + " - " + ans[1].split(" feat.")[0]  # Show song - artist
+        
         self.answer1 = Button(self.question, bd=0,
-                              text=self.answers[0][0] + " - " + self.answers[0][1].split(" feat.")[0],
+                              text=button_text(self.answers[0]),
                               command=lambda: [self._handle_guess(0, self.answer1)])
         self.answer1.pack()
         self.answer2 = Button(self.question, bd=0,
-                              text=self.answers[1][0] + " - " + self.answers[1][1].split(" feat.")[0],
+                              text=button_text(self.answers[1]),
                               command=lambda: [self._handle_guess(1, self.answer2)])
         self.answer2.pack()
         self.answer3 = Button(self.question, bd=0,
-                              text=self.answers[2][0] + " - " + self.answers[2][1].split(" feat.")[0],
+                              text=button_text(self.answers[2]),
                               command=lambda: [self._handle_guess(2, self.answer3)])
         self.answer3.pack()
         self.answer4 = Button(self.question, bd=0,
-                              text=self.answers[3][0] + " - " + self.answers[3][1].split(" feat.")[0],
+                              text=button_text(self.answers[3]),
                               command=lambda: [self._handle_guess(3, self.answer4)])
         self.answer4.pack()
         self.score_display = Label(self.guessPage,
