@@ -256,6 +256,8 @@ class SongGuesser:
         button_widget.config(bg=button_color)
         
         if is_correct:
+            # Show score increase notification
+            self.show_score_notification(f"+{self.remainingScore}")
             self.correctGuess()
             self.next_prompt()
         else:
@@ -264,9 +266,18 @@ class SongGuesser:
                 self.correctGuess()
                 self.next_prompt()
                 self.answer_buttons[self.correct].config(bg="green")
+                # Show score notification with zero points
+                self.show_score_notification("+0")
                 
         self.score_display.config(text=f"Score: {self.score}/{self.attempts}")
 
+    def show_score_notification(self, text):
+        # Create a temporary label to show the score increase
+        notification = Label(self.guessPage, text=text, fg="green", font=("Arial", 14, "bold"))
+        notification.pack(pady=5)
+        
+        # Schedule the notification to disappear after 1.5 seconds
+        root.after(1500, lambda: notification.destroy())
 
     def playSong(self):
         spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope='user-modify-playback-state'))
